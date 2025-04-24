@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "url": "https://calendar.google.com/calendar/u/1/"
+      }
+    },
+    "condition": {
+      "urlFilter": "||calendar.google.com^",
+      "resourceTypes": ["main_frame"]
+    }
+  }
+]
