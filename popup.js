@@ -2,6 +2,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const picker = document.getElementById("accountPicker");
   const saveButton = document.getElementById("save");
   const feedback = document.getElementById("feedback");
+  const selectAll = document.getElementById("selectAll");
+  const deselectAll = document.getElementById("deselectAll");
+
+  // Service toggle checkboxes - now including all new services
+  const serviceToggles = {
+    // Productivity
+    gmail: document.getElementById("gmail"),
+    drive: document.getElementById("drive"),
+    calendar: document.getElementById("calendar"),
+    docs: document.getElementById("docs"),
+    keep: document.getElementById("keep"),
+    contacts: document.getElementById("contacts"),
+    // Communication
+    meet: document.getElementById("meet"),
+    chat: document.getElementById("chat"),
+    // Media & Maps
+    youtube: document.getElementById("youtube"),
+    photos: document.getElementById("photos"),
+    maps: document.getElementById("maps"),
+  };
 
   // DIAGNOSTIC: Add a debug section to the popup
   const debugDiv = document.createElement("div");
@@ -32,14 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
   }
-
-  // Service toggle checkboxes
-  const serviceToggles = {
-    gmail: document.getElementById("gmail"),
-    drive: document.getElementById("drive"),
-    calendar: document.getElementById("calendar"),
-    docs: document.getElementById("docs"),
-  };
 
   // Load saved settings
   chrome.storage.sync.get(
@@ -74,12 +86,12 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("Saving account selection:", selected);
 
     // Collect enabled services
-    const enabledServices = {
-      gmail: serviceToggles.gmail.checked,
-      drive: serviceToggles.drive.checked,
-      calendar: serviceToggles.calendar.checked,
-      docs: serviceToggles.docs.checked,
-    };
+    const enabledServices = {};
+
+    // Add all services to the enabledServices object
+    for (const [service, checkbox] of Object.entries(serviceToggles)) {
+      enabledServices[service] = checkbox.checked;
+    }
 
     // Force a clear of the storage before setting new values
     chrome.storage.sync.clear(() => {
@@ -103,24 +115,36 @@ document.addEventListener("DOMContentLoaded", () => {
           // Hide feedback after 2 seconds
           setTimeout(() => {
             feedback.style.display = "none";
-            // Don't close the popup automatically so user can see debug info
-            // window.close();
+            // Keep the popup open instead of closing it
           }, 2000);
         }
       );
     });
   });
 
-  // Service toggle handlers
+  // Select All / Deselect All functionality
+  selectAll.addEventListener("click", (e) => {
+    e.preventDefault();
+    for (const checkbox of Object.values(serviceToggles)) {
+      checkbox.checked = true;
+    }
+  });
+
+  deselectAll.addEventListener("click", (e) => {
+    e.preventDefault();
+    for (const checkbox of Object.values(serviceToggles)) {
+      checkbox.checked = false;
+    }
+  });
+
+  // Service toggle handlers - save whenever a toggle changes
   for (const checkbox of Object.values(serviceToggles)) {
     checkbox.addEventListener("change", () => {
       // Collect current services state
-      const enabledServices = {
-        gmail: serviceToggles.gmail.checked,
-        drive: serviceToggles.drive.checked,
-        calendar: serviceToggles.calendar.checked,
-        docs: serviceToggles.docs.checked,
-      };
+      const enabledServices = {};
+      for (const [service, checkbox] of Object.entries(serviceToggles)) {
+        enabledServices[service] = checkbox.checked;
+      }
 
       // Save service settings immediately
       chrome.storage.sync.set({ enabledServices });
