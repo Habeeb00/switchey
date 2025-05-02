@@ -2,25 +2,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const picker = document.getElementById("accountPicker");
   const saveButton = document.getElementById("save");
   const feedback = document.getElementById("feedback");
-  const selectAll = document.getElementById("selectAll");
-  const deselectAll = document.getElementById("deselectAll");
 
-  // Service toggle checkboxes - now including all new services
+  // Only Gmail service toggle remains
   const serviceToggles = {
-    // Productivity
     gmail: document.getElementById("gmail"),
-    drive: document.getElementById("drive"),
-    calendar: document.getElementById("calendar"),
-    docs: document.getElementById("docs"),
-    keep: document.getElementById("keep"),
-    contacts: document.getElementById("contacts"),
-    // Communication
-    meet: document.getElementById("meet"),
-    chat: document.getElementById("chat"),
-    // Media & Maps
-    youtube: document.getElementById("youtube"),
-    photos: document.getElementById("photos"),
-    maps: document.getElementById("maps"),
   };
 
   // DIAGNOSTIC: Add a debug section to the popup
@@ -67,14 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
         picker.value = selectedAuthUser;
       }
 
-      // Set service toggle states
-      if (enabledServices) {
-        for (const [service, enabled] of Object.entries(enabledServices)) {
-          if (serviceToggles[service]) {
-            serviceToggles[service].checked = enabled;
-          }
-        }
-      }
+      // Set service toggle states - Gmail is always enabled
+      serviceToggles.gmail.checked = true;
 
       updateDebugInfo();
     }
@@ -82,28 +61,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Save button click handler
   saveButton.addEventListener("click", () => {
-    const selected = picker.value;
-    console.log("Saving account selection:", selected);
+    // Convert to string explicitly and store the original value for logging
+    const originalValue = picker.value;
+    const selected = String(originalValue); // Ensure it's a string
+    console.log(
+      "Saving account selection:",
+      selected,
+      `(original type: ${typeof originalValue})`
+    );
 
-    // Collect enabled services
-    const enabledServices = {};
-
-    // Add all services to the enabledServices object
-    for (const [service, checkbox] of Object.entries(serviceToggles)) {
-      enabledServices[service] = checkbox.checked;
-    }
+    // Collect enabled services - Gmail is the only service and it's always enabled
+    const enabledServices = {
+      gmail: true,
+    };
 
     // Force a clear of the storage before setting new values
     chrome.storage.sync.clear(() => {
       // Save settings to storage
       chrome.storage.sync.set(
         {
-          selectedAuthUser: selected.toString(), // Ensure it's a string
+          selectedAuthUser: selected, // Explicitly a string now
           enabledServices: enabledServices,
         },
         () => {
           console.log("Settings saved:", {
-            selectedAuthUser: selected.toString(),
+            selectedAuthUser: selected,
             enabledServices,
           });
 
@@ -121,33 +103,4 @@ document.addEventListener("DOMContentLoaded", () => {
       );
     });
   });
-
-  // Select All / Deselect All functionality
-  selectAll.addEventListener("click", (e) => {
-    e.preventDefault();
-    for (const checkbox of Object.values(serviceToggles)) {
-      checkbox.checked = true;
-    }
-  });
-
-  deselectAll.addEventListener("click", (e) => {
-    e.preventDefault();
-    for (const checkbox of Object.values(serviceToggles)) {
-      checkbox.checked = false;
-    }
-  });
-
-  // Service toggle handlers - save whenever a toggle changes
-  for (const checkbox of Object.values(serviceToggles)) {
-    checkbox.addEventListener("change", () => {
-      // Collect current services state
-      const enabledServices = {};
-      for (const [service, checkbox] of Object.entries(serviceToggles)) {
-        enabledServices[service] = checkbox.checked;
-      }
-
-      // Save service settings immediately
-      chrome.storage.sync.set({ enabledServices });
-    });
-  }
 });

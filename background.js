@@ -2,103 +2,57 @@
 async function getCurrentAccountSelection() {
   return new Promise((resolve) => {
     chrome.storage.sync.get("selectedAuthUser", (result) => {
-      const authUser = result.selectedAuthUser || "0";
+      // Ensure we always use a string and handle both undefined and numeric values
+      const authUser =
+        result.selectedAuthUser !== undefined
+          ? String(result.selectedAuthUser)
+          : "0";
       console.log(
         `getCurrentAccountSelection: ${authUser} (${typeof authUser})`
       );
-      resolve(authUser.toString());
+      resolve(authUser);
     });
   });
 }
 
-// Service mappings with correct URL patterns for each Google service
+// Service mappings - keeping only Gmail
 const services = {
   gmail: {
     host: "mail.google.com",
     path: "/mail",
     patterns: ["mail.google.com/mail"],
   },
-  drive: {
-    host: "drive.google.com",
-    path: "",
-    patterns: [
-      "drive.google.com/drive",
-      "drive.google.com/file",
-      "drive.google.com/folder",
-      "drive.google.com/?",
-      "drive.google.com$",
-    ],
-  },
-  calendar: {
-    host: "calendar.google.com",
-    path: "",
-    patterns: [
-      "calendar.google.com/calendar",
-      "calendar.google.com/event",
-      "calendar.google.com/?",
-      "calendar.google.com$",
-    ],
-  },
-  docs: {
-    host: "docs.google.com",
-    path: "",
-    patterns: [
-      "docs.google.com/document",
-      "docs.google.com/spreadsheets",
-      "docs.google.com/presentation",
-      "docs.google.com/forms",
-      "docs.google.com/drawings",
-      "docs.google.com/?",
-      "docs.google.com$",
-    ],
-  },
-  // New services
-  youtube: {
-    host: "youtube.com",
-    path: "",
-    patterns: ["youtube.com", "www.youtube.com"],
-    needsAccountParam: true, // YouTube uses ?authuser= instead of /u/
-  },
-  photos: {
-    host: "photos.google.com",
-    path: "",
-    patterns: ["photos.google.com"],
-  },
-  meet: {
-    host: "meet.google.com",
-    path: "",
-    patterns: ["meet.google.com"],
-  },
-  maps: {
-    host: "maps.google.com",
-    path: "",
-    patterns: ["maps.google.com", "www.google.com/maps"],
-    needsAccountParam: true, // Maps uses ?authuser= instead of /u/
-  },
-  keep: {
-    host: "keep.google.com",
-    path: "",
-    patterns: ["keep.google.com"],
-  },
-  chat: {
-    host: "chat.google.com",
-    path: "",
-    patterns: ["chat.google.com"],
-  },
-  contacts: {
-    host: "contacts.google.com",
-    path: "",
-    patterns: ["contacts.google.com"],
-  },
+  // Other services removed
 };
 
 // Flag to prevent redirect loops
 let redirectInProgress = false;
+let lastRedirectTime = 0;
+let lastRedirectUrl = "";
 
 // Main navigation handler
 async function handleNavigation(details) {
+  const currentTime = Date.now();
+
   // Skip if we're already handling a redirect
   if (redirectInProgress) {
+    console.log(`Skipping redirect because redirectInProgress is true`);
+    return;
+  }
+
+  // Skip if we just did a redirect recently (within 3 seconds)
+  if (currentTime - lastRedirectTime < 3000) {
+    console.log(
+      `Skipping redirect - too soon after last redirect (${
+        currentTime - lastRedirectTime
+      }ms)`
+    );
+    return;
+  }
+
+  // Skip if this is the same URL we just redirected to
+  if (details.url === lastRedirectUrl) {
+    console.log(`Skipping redirect - same as last redirect URL`);
     return;
   }
 
@@ -111,195 +65,142 @@ async function handleNavigation(details) {
       const authUser = await getCurrentAccountSelection();
       console.log(`NAVIGATION: ${details.url}, Current account: ${authUser}`);
 
-      // Skip if already at the correct account
-      if (url.pathname.includes(`/u/${authUser}/`) || url.search.includes(`authuser=${authUser}`)) {
+      // Extract the current account number from the URL if present
+      let currentUrlAccount = null;
+      const pathAccountMatch = url.pathname.match(/\/u\/(\d+)\//);
+      const queryAccountMatch = url.search.match(/[?&]authuser=(\d+)/);
+
+      if (pathAccountMatch) {
+        currentUrlAccount = String(pathAccountMatch[1]);
+        console.log(`Detected account in path: ${currentUrlAccount}`);
+      } else if (queryAccountMatch) {
+        currentUrlAccount = String(queryAccountMatch[1]);
+        console.log(`Detected account in query: ${currentUrlAccount}`);
+      } else {
+        console.log(`No account detected in URL path or query.`);
+        // If no account is detected, it often defaults to 0 for Google services
+        if (
+          url.hostname.includes("google.com") &&
+          !url.hostname.includes("accounts.google.com")
+        ) {
+          currentUrlAccount = "0";
+          console.log(`Assuming account 0 for default Google service URL.`);
+        }
+      }
+
+      // --- Primary Redirect Logic ---
+
+      // 1. Check if we are already on the correct account
+      if (currentUrlAccount === authUser) {
         console.log(`Already at the correct account: ${authUser}`);
         return;
       }
 
+      // 2. Handle manual account switching or login pages (No redirect)
+      if (
+        url.search.includes("authuser=") &&
+        queryAccountMatch &&
+        String(queryAccountMatch[1]) !== authUser
+      ) {
+        const userSelectedAccount = String(queryAccountMatch[1]);
+        console.log(
+          `User interacting with account ${userSelectedAccount} via authuser param, respecting this choice.`
+        );
+        return; // Don't redirect if user is manually selecting via query param
+      }
+      if (
+        url.hostname.includes("accounts.google.com") ||
+        url.hostname.includes("myaccount.google.com") ||
+        url.search.includes("AccountChooser") ||
+        url.search.includes("account_chooser") ||
+        url.pathname.includes("ServiceLogin") ||
+        url.pathname.includes("signin")
+      ) {
+        console.log(
+          `Account management URL detected, not redirecting: ${url.href}`
+        );
+        return;
+      }
+
+      // 3. If not on the correct account, determine the redirect URL
+      console.log(
+        `Account mismatch: URL shows ${currentUrlAccount}, selected is ${authUser}. Preparing redirect.`
+      );
+
+      let redirectUrl = null;
+      // Specific handling for Gmail
+      if (url.hostname === "mail.google.com") {
+        let pathSuffix = "";
+        // Try to preserve the path after /u/X/
+        const mailPathMatch = url.pathname.match(/^\/mail\/u\/\d+\/(.*)/);
+        if (mailPathMatch && mailPathMatch[1]) {
+          pathSuffix = mailPathMatch[1];
+        } else if (
+          url.pathname.startsWith("/mail/") &&
+          !url.pathname.startsWith("/mail/u/")
+        ) {
+          // Handle cases like /mail/ca/, /mail/&?, etc., but not the base /mail/
+          pathSuffix = url.pathname.substring(6); // Get path after /mail/
+        }
+        // Preserve query string, removing any existing authuser param
+        const searchParams = new URLSearchParams(url.search);
+        searchParams.delete("authuser");
+        const queryString = searchParams.toString()
+          ? `?${searchParams.toString()}`
+          : "";
+
+        redirectUrl = `https://mail.google.com/mail/u/${authUser}/${pathSuffix}${queryString}`;
+        console.log(`Calculated Gmail redirect URL: ${redirectUrl}`);
+      }
+      // Add handling for other Google services here if needed, using a similar pattern
+      // else if (url.hostname === "drive.google.com") { ... }
+
+      // 4. Perform the redirect if a URL was determined
+      if (redirectUrl) {
+        console.log(`Redirecting to ${redirectUrl}`);
+        redirectInProgress = true;
+        lastRedirectTime = currentTime;
+        lastRedirectUrl = redirectUrl;
+        chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
+          setTimeout(() => {
+            redirectInProgress = false;
+          }, 3000); // Cooldown period
+        });
+        return;
+      } else {
+        console.log(
+          `No specific redirect rule found for ${url.hostname}. Not redirecting.`
+        );
+      }
+
+      // --- Old logic removed for clarity ---
+      // The following blocks are now integrated into the logic above
+      /*
+      // Special handling for account 5 (authuser=4) issues
+      if (authUser === "4") { ... } 
+      else if (currentUrlAccount === authUser) { ... }
+
+      // Skip if already at the correct account
+      if ( url.pathname.includes(...) || url.search.includes(...) ) { ... }
+
       // Don't redirect if user is manually switching accounts
-      if (url.search.includes("authuser=")) {
-        console.log(`URL has explicit authuser parameter, not redirecting`);
-        return;
-      }
+      if (url.search.includes("authuser=")) { ... }
 
-      // Check if already at a specific account
+      // Don't redirect on account selection pages
+      if ( url.hostname.includes("accounts.google.com") ... ) { ... }
+
+      // Check if already at a specific account - improved detection
       const accountMatch = url.pathname.match(/\/u\/(\d+)\//);
-      if (accountMatch && accountMatch[1] !== authUser) {
-        console.log(`URL has account pattern ${accountMatch[1]}, but want ${authUser}`);
-      }
-
-      // Special case for YouTube on google.com domain
-      if (url.hostname === "www.google.com" && url.pathname.startsWith("/youtube")) {
-        const redirectUrl = `https://youtube.com/?authuser=${authUser}`;
-        console.log(`Redirecting YouTube shortcut to ${redirectUrl}`);
-
-        redirectInProgress = true;
-        chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-          setTimeout(() => { redirectInProgress = false; }, 1500);
-        });
-        return;
-      }
-
-      // Special case for Google Maps on google.com domain
-      if (url.hostname === "www.google.com" && url.pathname.startsWith("/maps")) {
-        const redirectUrl = `https://maps.google.com/?authuser=${authUser}`;
-        console.log(`Redirecting Maps to ${redirectUrl}`);
-
-        redirectInProgress = true;
-        chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-          setTimeout(() => { redirectInProgress = false; }, 1500);
-        });
-        return;
-      }
+      if (accountMatch) { ... }
 
       // Look for matching services
-      for (const [serviceName, serviceInfo] of Object.entries(services)) {
-        // Special handling for base URLs with no path
-        if (
-          url.hostname === serviceInfo.host &&
-          (url.pathname === "/" || url.pathname === "")
-        ) {
-          console.log(`Matched base URL for ${serviceName}`);
+      for (const [serviceName, serviceInfo] of Object.entries(services)) { ... }
+      */
 
-          // Build the proper redirect URL based on the service
-          let redirectUrl;
-
-          if (serviceInfo.needsAccountParam) {
-            // Services using authuser parameter instead of path
-            redirectUrl = `https://${serviceInfo.host}${url.pathname}?authuser=${authUser}`;
-
-            // Preserve existing query parameters except authuser
-            const searchParams = new URLSearchParams(url.search);
-            searchParams.delete("authuser");
-            if (searchParams.toString()) {
-              redirectUrl += `&${searchParams.toString()}`;
-            }
-          } else if (serviceName === "gmail") {
-            redirectUrl = `https://${serviceInfo.host}${serviceInfo.path}/u/${authUser}/`;
-          } else {
-            redirectUrl = `https://${serviceInfo.host}/u/${authUser}/`;
-          }
-
-          console.log(`Redirecting base URL to ${redirectUrl}`);
-
-          redirectInProgress = true;
-          chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-            setTimeout(() => {
-              redirectInProgress = false;
-            }, 1500);
-          });
-          return;
-        }
-
-        // Check if URL hostname matches service hostname
-        if (url.hostname === serviceInfo.host || 
-           (serviceName === "youtube" && (url.hostname === "www.youtube.com" || url.hostname === "youtube.com")) ||
-           (serviceName === "maps" && (url.hostname === "maps.google.com" || url.hostname === "www.google.com") && url.pathname.startsWith("/maps"))) {
-          
-          // For Drive, handle special case of folder paths
-          if (
-            serviceName === "drive" &&
-            url.pathname.startsWith("/drive/folders")
-          ) {
-            const redirectUrl = `https://${
-              serviceInfo.host
-            }/drive/u/${authUser}/folders${url.pathname.substring(14)}`;
-            console.log(`Redirecting Drive folder to ${redirectUrl}`);
-
-            redirectInProgress = true;
-            chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-              setTimeout(() => {
-                redirectInProgress = false;
-              }, 1500);
-            });
-            return;
-          }
-
-          // For Drive, handle special case of file paths
-          if (
-            serviceName === "drive" &&
-            url.pathname.startsWith("/drive/file")
-          ) {
-            const redirectUrl = `https://${
-              serviceInfo.host
-            }/drive/u/${authUser}/file${url.pathname.substring(11)}`;
-            console.log(`Redirecting Drive file to ${redirectUrl}`);
-
-            redirectInProgress = true;
-            chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-              setTimeout(() => {
-                redirectInProgress = false;
-              }, 1500);
-            });
-            return;
-          }
-
-          // Check against pattern list for more specific matches
-          for (const pattern of serviceInfo.patterns) {
-            if (url.href.includes(pattern)) {
-              console.log(`Matched pattern "${pattern}" for service ${serviceName}`);
-
-              let redirectUrl;
-
-              if (serviceInfo.needsAccountParam) {
-                // Services using authuser parameter
-                const baseUrl = url.origin + url.pathname;
-                redirectUrl = `${baseUrl}?authuser=${authUser}`;
-
-                // Preserve existing query parameters except authuser
-                const searchParams = new URLSearchParams(url.search);
-                searchParams.delete("authuser");
-                if (searchParams.toString()) {
-                  redirectUrl += `&${searchParams.toString()}`;
-                }
-              } else if (serviceName === "gmail") {
-                redirectUrl = `https://${serviceInfo.host}${serviceInfo.path}/u/${authUser}/`;
-              } else if (serviceName === "docs") {
-                // Handle different Google Docs applications
-                if (url.pathname.startsWith("/document")) {
-                  redirectUrl = `https://${serviceInfo.host}/document/u/${authUser}/`;
-                } else if (url.pathname.startsWith("/spreadsheets")) {
-                  redirectUrl = `https://${serviceInfo.host}/spreadsheets/u/${authUser}/`;
-                } else if (url.pathname.startsWith("/presentation")) {
-                  redirectUrl = `https://${serviceInfo.host}/presentation/u/${authUser}/`;
-                } else if (url.pathname.startsWith("/forms")) {
-                  redirectUrl = `https://${serviceInfo.host}/forms/u/${authUser}/`;
-                } else {
-                  redirectUrl = `https://${serviceInfo.host}/u/${authUser}/`;
-                }
-              } else if (serviceName === "calendar") {
-                // Calendar with specific path
-                if (url.pathname.startsWith("/calendar/")) {
-                  redirectUrl = `https://${serviceInfo.host}/calendar/u/${authUser}/`;
-                } else {
-                  redirectUrl = `https://${serviceInfo.host}/u/${authUser}/`;
-                }
-              } else {
-                // Default for Drive and other services
-                redirectUrl = `https://${serviceInfo.host}/u/${authUser}/`;
-              }
-
-              console.log(`Redirecting to ${redirectUrl}`);
-
-              // Set flag to prevent loops
-              redirectInProgress = true;
-
-              // Perform redirect
-              chrome.tabs.update(details.tabId, { url: redirectUrl }, () => {
-                setTimeout(() => {
-                  redirectInProgress = false;
-                }, 1500);
-              });
-
-              return;
-            }
-          }
-        }
-      }
-
-      // No matching service found
-      console.log(`No matching service for URL: ${details.url}`);
+      // No matching service found (this part might be redundant now)
+      console.log(
+        `No matching service or redirect rule applied for URL: ${details.url}`
+      );
     }
   } catch (error) {
     console.error("Error in handleNavigation:", error);

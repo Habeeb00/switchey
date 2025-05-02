@@ -7,7 +7,7 @@
         font-family: sans-serif;
         padding: 16px;
         width: 300px;
-        max-height: 600px;
+        max-height: 300px;
         overflow-y: auto;
       }
 
@@ -59,49 +59,19 @@
         margin: 10px 0;
         text-align: center;
       }
-      
-      .services-container {
-        max-height: 300px;
-        overflow-y: auto;
-        padding-right: 10px;
-        margin-bottom: 10px;
-      }
-      
+
       .service-toggle {
         margin-top: 8px;
         display: flex;
         align-items: center;
       }
-      
+
       .service-toggle input[type="checkbox"] {
         margin-right: 8px;
       }
-      
+
       .service-toggle label {
         flex-grow: 1;
-      }
-      
-      .service-category {
-        margin-top: 10px;
-        font-weight: bold;
-        color: #555;
-      }
-      
-      .toggle-all {
-        margin-top: 8px;
-        text-align: right;
-        font-size: 12px;
-      }
-      
-      .toggle-all a {
-        color: #4285f4;
-        text-decoration: none;
-        cursor: pointer;
-        margin-left: 10px;
-      }
-      
-      .toggle-all a:hover {
-        text-decoration: underline;
       }
     </style>
   </head>
@@ -121,63 +91,11 @@
     <button id="save">Set as Default</button>
 
     <div id="services-section">
-      <h3>Affected Services:</h3>
-      
-      <div class="toggle-all">
-        <a href="#" id="selectAll">Select All</a>
-        <a href="#" id="deselectAll">Deselect All</a>
-      </div>
-      
-      <div class="services-container">
-        <div class="service-category">Productivity</div>
-        <div class="service-toggle">
-          <input type="checkbox" id="gmail" checked />
-          <label for="gmail">Gmail</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="drive" checked />
-          <label for="drive">Google Drive</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="calendar" checked />
-          <label for="calendar">Google Calendar</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="docs" checked />
-          <label for="docs">Google Docs</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="keep" checked />
-          <label for="keep">Google Keep</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="contacts" checked />
-          <label for="contacts">Google Contacts</label>
-        </div>
-        
-        <div class="service-category">Communication</div>
-        <div class="service-toggle">
-          <input type="checkbox" id="meet" checked />
-          <label for="meet">Google Meet</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="chat" checked />
-          <label for="chat">Google Chat</label>
-        </div>
-        
-        <div class="service-category">Media & Maps</div>
-        <div class="service-toggle">
-          <input type="checkbox" id="youtube" checked />
-          <label for="youtube">YouTube</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="photos" checked />
-          <label for="photos">Google Photos</label>
-        </div>
-        <div class="service-toggle">
-          <input type="checkbox" id="maps" checked />
-          <label for="maps">Google Maps</label>
-        </div>
+      <h3>Affected Service:</h3>
+
+      <div class="service-toggle">
+        <input type="checkbox" id="gmail" checked disabled />
+        <label for="gmail">Gmail</label>
       </div>
     </div>
 
