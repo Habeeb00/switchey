@@ -1,17 +1,48 @@
 {
   "manifest_version": 3,
-  "name": "Google Account Extension",
-  "version": "1.0",
-  "permissions": ["declarativeNetRequest", "storage", "webNavigation", "tabs"],
-  "host_permissions": ["*://*.google.com/*"],
+  "name": "Googel Default Account Switcher",
+  "version": "1.0.0",
+  "version_name": "1.0 Beta",
+  "description": "Effortlessly manage and switch between your Google accounts. Set default accounts, prevent unwanted redirects, and enjoy seamless account management across Google services.",
+  "author": "Habeeb Rahman",
+  "homepage_url": "https://bento.me/habeebrahman",
+  
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  
+  "permissions": [
+    "declarativeNetRequest", 
+    "storage", 
+    "webNavigation", 
+    "tabs", 
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "*://*.google.com/*"
+  ],
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icon.png",
       "48": "icon.png",
       "128": "icon.png"
-    }
+    },
+    "default_title": "Google Default Account Switcher"
   },
+  
   "declarative_net_request": {
     "rule_resources": [
       {
@@ -21,7 +52,23 @@
       }
     ]
   },
+  
   "background": {
     "service_worker": "background.js"
+  },
+  
+  "options_page": "about.html",
+  
+  "minimum_chrome_version": "88",
+  
+  "short_name": "Acc Switcher",
+  
+  "categories": [
+    "productivity",
+    "utility"
+  ],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
