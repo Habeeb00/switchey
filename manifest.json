@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Googel Default Account Switcher",
+  "name": "Google Default Account Switcher",
   "version": "1.0.0",
   "version_name": "1.0 Beta",
   "description": "Effortlessly manage and switch between your Google accounts. Set default accounts, prevent unwanted redirects, and enjoy seamless account management across Google services.",
