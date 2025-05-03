@@ -1,4 +1,4 @@
-# Google Account Extension
+# Google Default Account Switcher
 
 A browser extension to enhance your Google Account management experience.
 
