@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap");
+
+      :root {
+        --primary-color: #4285f4;
+        --primary-hover: #3367d6;
+        --background-color: #ffffff;
+        --text-color: #202124;
+        --border-color: #dadce0;
+        --card-bg: #f8f9fa;
+      }
+
+      html[data-theme="dark"] {
+        --primary-color: #8ab4f8;
+        --primary-hover: #aecbfa;
+        --background-color: #202124;
+        --text-color: #e8eaed;
+        --border-color: #5f6368;
+        --card-bg: #2d2e31;
+      }
+
+      body {
+        font-family: "Google Sans", "Roboto", sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        transition: background-color 0.3s, color 0.3s;
+      }
+
+      h1,
+      h2 {
+        font-family: "Google Sans", sans-serif;
+        color: var(--primary-color);
+        margin-top: 0;
+        font-weight: 500;
+        letter-spacing: 0.25px;
+      }
+
+      .section {
+        background-color: var(--card-bg);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--border-color);
+      }
+
+      .contact a {
+        color: var(--primary-color);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      .contact a:hover {
+        color: var(--primary-hover);
+        text-decoration: underline;
+      }
+
+      .theme-toggle {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background-color: white;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        z-index: 10;
+        transition: background-color 0.3s;
+      }
+
+      .theme-toggle:hover {
+        background-color: rgba(60, 64, 67, 0.08);
+      }
+
+      html[data-theme="dark"] .theme-toggle {
+        background-color: #202124;
+        border-color: #5f6368;
+      }
+
+      html[data-theme="dark"] .theme-toggle::after {
+        background-color: #8ab4f8;
+      }
+
+      .theme-toggle::after {
+        content: "";
+        display: block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: #4285f4;
+        transition: transform 0.3s ease;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .feature-item {
+        background-color: var(--background-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 16px;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .feature-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .feature-item h3 {
+        color: var(--primary-color);
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+
+      .feature-item p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--text-color);
+        opacity: 0.9;
+      }
+
+      /* Button styles update */
+      .support-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 24px;
+        margin-bottom: 24px;
+      }
+
+      .support-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 24px;
+        font-family: "Google Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .github-button {
+        background-color: #2da44e;
+        color: white;
+      }
+
+      .github-button:hover {
+        background-color: #2c974b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(45, 164, 78, 0.2);
+      }
+
+      .coffee-button {
+        background-color: #ff813f;
+        color: white;
+      }
+
+      .coffee-button:hover {
+        background-color: #ff6b1a;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 129, 63, 0.2);
+      }
+
+      /* Dark mode adjustments */
+      html[data-theme="dark"] .github-button {
+        background-color: #238636;
+      }
+
+      html[data-theme="dark"] .github-button:hover {
+        background-color: #2ea043;
+        box-shadow: 0 4px 8px rgba(35, 134, 54, 0.3);
+      }
+
+      html[data-theme="dark"] .coffee-button:hover {
+        box-shadow: 0 4px 8px rgba(255, 129, 63, 0.3);
+      }
+
+      .icon {
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      /* Button accessibility improvements */
+      .support-button:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4), 0 0 0 3px currentColor;
+      }
+
+      .support-button:focus:not(:focus-visible) {
+        box-shadow: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .support-button {
+          transition: none;
+        }
+      }
+
+      html[data-theme="dark"] .feature-item {
+        background-color: var(--card-bg);
+      }
+
+      .contact-links {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 12px;
+        line-height: 1.5;
+      }
+
+      .contact-links a {
+        font-size: 13px;
+        line-height: 1.5;
+        padding-bottom: 2px;
+      }
+
+      .contact-separator {
+        color: var(--border-color);
+        font-size: 14px;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        margin: 0;
+        line-height: inherit;
+        padding-bottom: 2px;
+      }
+
+      .contact p {
+        margin: 8px 0;
+        text-align: center;
+      }
+
+      /* Dark mode adjustments for separators */
+      html[data-theme="dark"] .contact-separator {
+        color: var(--border-color);
+      }
+    </style>
+  </head>
+  <body>
+    <button
+      id="theme-toggle"
+      class="theme-toggle"
+      title="Toggle dark/light mode"
+    ></button>
+    <h1>About This Extension</h1>
+    <div class="section">
+      <h2>Features</h2>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <h3>Smart Account Management</h3>
+          <p>
+            Automatically detects and manages multiple Google accounts for
+            seamless switching.
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Default Account Selection</h3>
+          <p>
+            Set your preferred Google account as default for all new sessions.
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Dark Mode Support</h3>
+          <p>
+            Comfortable viewing with both light and dark themes to match your
+            browser.
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Gmail Integration</h3>
+          <p>Ensures you always open Gmail with your preferred account.</p>
+        </div>
+        <div class="feature-item">
+          <h3>Manual Override</h3>
+          <p>
+            Flexible control with the ability to temporarily disable the
+            extension.
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Instant Updates</h3>
+          <p>
+            Changes take effect immediately for new tabs without requiring a
+            browser restart.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Version</h2>
+      <p><span>Google default account switcher</span> <span>v 1.0.0</span></p>
+    </div>
+    <div class="section">
+      <h2>Creator</h2>
+      <p>Habeeb</p>
+      <div class="support-buttons">
+        <a
+          href="https://github.com/Habeeb00/Google-default-account-switcher"
+          target="_blank"
+          class="support-button github-button"
+          aria-label="Star this project on GitHub"
+        >
+          <span class="icon">★</span>
+          Star on GitHub
+        </a>
+        <a
+          href="https://buymeacoffee.com/habeebrahman"
+          target="_blank"
+          class="support-button coffee-button"
+          aria-label="Support this project with a coffee"
+        >
+          <span class="icon">☕</span>
+          Buy me a coffee
+        </a>
+      </div>
+    </div>
+    <div class="section">
+      <h2>Details</h2>
+      <p>
+        This extension is designed to enhance your Google account experience by
+        providing additional features and tools to improve productivity and
+        usability.
+      </p>
+    </div>
+    <div class="section">
+      <h2>How to Use</h2>
+      <div class="feature-grid">
+        <div class="feature-item">
+          <h3>Set Default Account</h3>
+          <p>
+            1. Click the extension icon in your toolbar<br />
+            2. Select your preferred account from the dropdown<br />
+            3. Click "Set as Default" to make it your primary account
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Quick Account Switch</h3>
+          <p>
+            Use the dropdown menu to easily switch between your Google accounts
+            without logging out and back in
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Gmail Integration</h3>
+          <p>
+            Your selected default account will automatically be used when
+            opening Gmail in new tabs
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Temporary Disable</h3>
+          <p>
+            Use the "Disable Extension" toggle in the extension popup when you
+            need to temporarily bypass the default account behavior
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Theme Preference</h3>
+          <p>
+            Click the theme toggle button (top-right corner) to switch between
+            light and dark modes for comfortable viewing
+          </p>
+        </div>
+        <div class="feature-item">
+          <h3>Instant Effect</h3>
+          <p>
+            All changes take effect immediately for new tabs - no need to
+            refresh or restart your browser
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="section contact">
+      <h2>Contact</h2>
+      <p>If you have any questions or feedback, feel free to reach out:</p>
+      <div class="contact-links">
+        <a href="mailto:rahmanhabeeb360@gmail.com">Email</a>
+        <span class="contact-separator">•</span>
+        <a
+          href="https://github.com/habeeb/google-account-extension"
+          target="_blank"
+          >GitHub</a
+        >
+        <span class="contact-separator">•</span>
+        <a href="https://bento.me/habeebrahman" target="_blank">Website</a>
+      </div>
+    </div>
+
+    <script>
+      // Theme toggle functionality
+      const themeToggle = document.getElementById("theme-toggle");
+
+      // Check for saved theme preference or default to light
+      const currentTheme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", currentTheme);
+
+      themeToggle.addEventListener("click", () => {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+      });
+    </script>
+  </body>
+</html>
