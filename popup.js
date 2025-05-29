@@ -171,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Modal logic for refresh confirmation
   const refreshModal = document.getElementById('refreshModal');
+  const modalContent = document.getElementById('modalContent');
   const modalCloseBtn = document.getElementById('modalCloseBtn');
   const modalCancelBtn = document.getElementById('modalCancelBtn');
   const modalConfirmBtn = document.getElementById('modalConfirmBtn');
@@ -184,6 +185,13 @@ document.addEventListener("DOMContentLoaded", () => {
   modalCloseBtn.onclick = hideRefreshModal;
   modalCancelBtn.onclick = hideRefreshModal;
 
+  // Allow clicking outside modal-content to close the modal
+  refreshModal.addEventListener('mousedown', function(event) {
+    if (event.target === refreshModal) {
+      hideRefreshModal();
+    }
+  });
+
   // Function to refresh the account list
   function refreshAccountList() {
     showRefreshModal();
@@ -193,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
   modalConfirmBtn.onclick = function() {
     hideRefreshModal();
     // Show loading indicator in the refresh button
-    refreshButton.innerHTML = "<div class='loading-spinner'></div>";
+    refreshButton.innerHTML = '<span class="refresh-icon" style="font-size:20px;">&#x21bb;</span><span class="icon-tooltip">Refresh</span>';
     refreshButton.disabled = true;
     
     // Show initial notification
@@ -211,11 +219,12 @@ document.addEventListener("DOMContentLoaded", () => {
         populateAccountPicker(numberOfAccounts, accountEmails);
         
         // Show success message
-        feedback.textContent = "Account list refreshed!";
+        console.log('Scan complete, updating feedback');
+        feedback.textContent = "Accounts fetched!";
         feedback.style.display = "block";
         
-        // Reset the refresh button
-        refreshButton.innerHTML = "↻";
+        // Reset the refresh button to icon
+        refreshButton.innerHTML = '<span class="refresh-icon" style="font-size:20px;">&#x21bb;</span><span class="icon-tooltip">Refresh</span>';
         refreshButton.disabled = false;
         
         // Hide feedback after 4 seconds
@@ -229,7 +238,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // Save button click handler
+  // Clear Data button logic
+  const clearDataBtn = document.getElementById('clearDataBtn');
+  clearDataBtn.addEventListener('click', () => {
+    chrome.storage.local.clear(() => {
+      chrome.storage.sync.clear(() => {
+        populateAccountPicker(1, {});
+        showFeedback('All data cleared!');
+      });
+    });
+  });
+
+  // Show feedback when user changes default account
   saveButton.addEventListener("click", () => {
     // Convert to string explicitly and store the original value for logging
     const originalValue = picker.value;
@@ -262,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
           logStorageInfo();
 
           // Show feedback message
-          feedback.style.display = "block";
+          showFeedback('Default account set! Future Google service tabs will open with your selected account.');
 
           // Hide feedback after 2 seconds
           setTimeout(() => {
@@ -281,4 +301,8 @@ document.addEventListener("DOMContentLoaded", () => {
   aboutSectionMinimal.addEventListener('click', () => {
     aboutSectionDetails.classList.toggle('show');
   });
+
+  // Update detected accounts list on load and after refresh
+  updateDetectedAccountsList();
+  refreshButton.addEventListener('click', updateDetectedAccountsList);
 });

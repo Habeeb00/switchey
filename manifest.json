@@ -63,13 +63,9 @@
   "minimum_chrome_version": "88",
   
   "short_name": "Acc Switcher",
-  
-  "categories": [
-    "productivity",
-    "utility"
-  ],
-  
+    
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  },
+  "privacy_policy": "privacy.html"
 }

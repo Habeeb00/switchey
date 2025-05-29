@@ -82,7 +82,7 @@
 
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-        padding: 16px;
+        padding: 16px 16px 24px 16px;
         width: 320px;
         max-height: 350px;
         overflow-y: auto;
@@ -99,7 +99,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: 4px;
         position: sticky;
         top: 0;
         background-color: var(--background-color);
@@ -209,6 +209,18 @@
         align-items: center;
         gap: 8px;
         margin-bottom: 16px;
+      }
+
+      .primary-button.action-wide {
+        flex: 2 1 0%;
+        min-width: 0;
+        height: 40px;
+      }
+
+      .refresh-button.action-narrow, .danger-button.action-narrow {
+        flex: 1 1 0%;
+        min-width: 0;
+        height: 40px;
       }
 
       .primary-button {
@@ -379,7 +391,7 @@
 
       .theme-toggle:hover {
         background-color: rgba(60, 64, 67, 0.08);
-      }
+        }
 
       /* Simple theme toggle */
       html[data-theme="dark"] .theme-toggle {
@@ -401,29 +413,62 @@
         transition: transform 0.3s ease;
       }
       .about-section {
-        font-size: 12px;
-        margin-top: 6px;
-        padding: 10px;
+        font-size: 10px;
+        margin-top: 4px;
+        padding: 4px 4px 4px 4px;
         border-top: 1px solid #ddd;
         color: #555;
-        text-align: center;
         background-color: #f8f9fa;
         border-radius: 4px; /* Less rounded corners */
         display: flex;
-        justify-content: center;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
-        gap: 10px;
+        margin-bottom: 2px;
+        gap: 4px;
       }
       .about-section-version {
         color: #1a73e8;
         font-weight: 500;
-      }
-      .about-section-creator {
-        color: #555;
+        flex: 1 1 0;
+        text-align: left;
+        padding: 0 8px;
+        font-size: 10px;
       }
       .about-section-separator {
         color: #ccc;
         margin: 0 5px;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.5;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      .about-section-links {
+        flex: 1 1 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        padding: 0 8px;
+      }
+      .about-section-link {
+        color: #1a73e8;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 10px;
+        padding: 0 8px;
+        transition: color 0.2s;
+      }
+      .about-section-link:hover {
+        color: #185abc;
+        text-decoration: underline;
+      }
+      .about-section-policy {
+        flex: 1 1 0;
+        text-align: right;
+        padding: 0 8px;
+        font-size: 10px;
       }
 
       html[data-theme="dark"] .about-section {
@@ -434,9 +479,6 @@
       html[data-theme="dark"] .about-section-version {
         color: #8ab4f8;
       }
-      html[data-theme="dark"] .about-section-creator {
-        color: #aaa;
-      }
       html[data-theme="dark"] .about-section-separator {
         color: #666;
       }
@@ -444,25 +486,32 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 12px;
-        margin-top: 8px;
+        gap: 0;
+        margin-top: 4px;
         line-height: 1.5;
+        font-size: 8px;
+        padding-bottom: 2px;
+        margin-bottom: 4px;
       }
       .about-links a {
         color: #1a73e8;
         text-decoration: none;
         font-weight: 500;
         transition: color 0.2s ease;
-        padding-bottom: 10px;
-        font-size: 13px;
+        padding: 0 8px;
+        font-size: 11px;
         line-height: 1.5;
       }
       .about-links .separator {
         color: #ccc;
         margin: 0;
         padding: 0;
-        font-size: 12px;
-        font-weight: normal;
+        font-size: 8px;
+        font-weight: 100;
+        line-height: 1.5;
+        display: flex;
+        align-items: center;
+        height: 8px;
       }
       .contact-separator {
         color: var(--border-color);
@@ -533,18 +582,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        /* Add blur effect */
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
       }
       .modal-content {
         background: var(--background-color);
         color: var(--text-color);
         border-radius: 8px;
         padding: 18px 18px 14px 18px;
-        min-width: 240px;
-        max-width: 300px;
+        min-width: 200px;
+        max-width: 260px;
+        border: 0.5px solid var(--border-color);
         box-shadow: 0 2px 16px rgba(0,0,0,0.18);
         position: relative;
         font-size: 13px;
         text-align: left;
+        z-index: 1001;
       }
       .modal-title {
         font-size: 15px;
@@ -591,6 +645,116 @@
       .modal-close:hover {
         color: #222;
       }
+      .danger-button {
+        background: #e53e3e;
+        color: #fff;
+        border: none;
+        font-weight: 500;
+        border-radius: 4px;
+      }
+      .danger-button:hover {
+        background: #c53030;
+        color: #fff;
+      }
+      .danger-button.action-narrow {
+        flex: 1 1 0%;
+        min-width: 0;
+        height: 40px;
+        background: var(--background-color);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+      }
+      .danger-button.action-narrow:hover {
+        background: #e53e3e;
+        color: #fff;
+        border: 1px solid #e53e3e;
+      }
+      .action-row button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+      .icon-btn {
+        background: none;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        padding: 0;
+        font-size: 18px;
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s, border 0.2s;
+      }
+      .icon-btn:hover {
+        background: var(--primary-color);
+        color: #fff;
+      }
+      .danger-button.action-narrow {
+        background: var(--background-color);
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+      }
+      .danger-button.action-narrow:hover {
+        background: #e53e3e;
+        color: #fff;
+        border: 1px solid #e53e3e;
+      }
+      html[data-theme="dark"] .icon-btn,
+      html[data-theme="dark"] .danger-button.action-narrow {
+        border-color: #222;
+      }
+      .icon-tooltip {
+        visibility: hidden;
+        opacity: 0;
+        background: #222;
+        color: #fff;
+        text-align: center;
+        border-radius: 4px;
+        padding: 3px 10px;
+        position: absolute;
+        z-index: 10;
+        bottom: 110%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+      }
+      .icon-btn:hover .icon-tooltip,
+      .danger-button.action-narrow:hover .icon-tooltip {
+        visibility: visible;
+        opacity: 1;
+      }
+      .about-links {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        margin-top: 4px;
+        line-height: 1.5;
+        font-size: 11px;
+        padding-bottom: 2px;
+      }
+      .about-links .about-section-separator {
+        color: #ccc;
+        margin: 0 6px;
+        padding: 0;
+        font-size: 14px;
+        font-weight: normal;
+        display: inline-flex;
+        align-items: center;
+        height: 18px;
+      }
+      html[data-theme="dark"] .icon-btn:hover {
+        background: #fff;
+        color: #222;
+        border-color: #fff;
+      }
     </style>
   </head>
   <body>
@@ -607,28 +771,46 @@
         class="account-picker"
         title="Select your preferred Google account"
       >
-        <!-- Account options will be dynamically generated -->
+
       </select>
     </div>
 
-    <div id="feedback" class="feedback">Account preference saved!</div>
+    <!-- Show detected accounts -->
+    <div id="detectedAccountsSection" class="section-card" style="margin-top:2px; padding-top:5px; padding-bottom:5px;">
+      <div style="font-size:11px; color:#888; ">These are stored only on your device and cleared when you clear data or uninstall the extension.</div>
+    </div>
 
     <div class="action-row">
       <button
         id="save"
-        class="primary-button"
+        class="primary-button action-wide"
         title="Make this account your default for new sessions"
       >
         Set as Default
       </button>
       <button
         id="refresh"
-        class="refresh-button"
-        title="Update the list of available accounts"
+        class="refresh-button action-narrow icon-btn"
+        aria-label="Refresh"
+        type="button"
       >
-        Refresh
+        <span class="refresh-icon" style="font-size:20px;">&#x21bb;</span>
+        <span class="icon-tooltip">Refresh</span>
+      </button>
+      <button
+        id="clearDataBtn"
+        class="danger-button action-narrow icon-btn"
+        aria-label="Clear Data"
+        type="button"
+      >
+        <span class="trash-icon" style="display:inline-block; width:20px; height:20px; vertical-align:middle;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </span>
+        <span class="icon-tooltip">Clear Data</span>
       </button>
     </div>
+
+    <div id="feedback" class="feedback">Account preference saved!</div>
 
     <div id="services-section" class="section-card">
       <h3>Active Services:</h3>
@@ -659,20 +841,21 @@
         </div>
       </div>
     </div>
-    <p class="note">Tip: Changes apply immediately to newly opened tabs</p>
+    <p class="note"> Note: Changes apply immediately to newly opened tabs</p>
     <div class="about-section">
-      <span class="about-section-version">v1.0</span>
-      <span class="about-section-separator">|</span>
-      <span class="about-section-creator">Created by Habeeb</span>
-    </div>
-    <div class="about-links">
-      <a href="about.html" target="_blank">About</a>
+      <span class="about-section-version">v1.1</span>
+      <div class="about-section-links" style="justify-content:center;">
+        <a href="about.html" target="_blank" class="about-section-link">About</a>
+      </div>
+      <div class="about-section-policy">
+        <a href="privacy.html" target="_blank" class="about-section-link">Privacy Policy</a>
+      </div>
     </div>
     <script src="popup.js"></script>
 
     <!-- Custom Confirmation Modal -->
     <div id="refreshModal" class="modal" style="display:none;">
-      <div class="modal-content">
+      <div class="modal-content" id="modalContent">
         <span class="modal-close" id="modalCloseBtn">&times;</span>
         <div class="modal-title">Scan for Google Accounts?</div>
         <div class="modal-body">
