@@ -169,11 +169,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Modal logic for refresh confirmation
+  const refreshModal = document.getElementById('refreshModal');
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  const modalCancelBtn = document.getElementById('modalCancelBtn');
+  const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+
+  function showRefreshModal() {
+    refreshModal.style.display = 'flex';
+  }
+  function hideRefreshModal() {
+    refreshModal.style.display = 'none';
+  }
+  modalCloseBtn.onclick = hideRefreshModal;
+  modalCancelBtn.onclick = hideRefreshModal;
+
   // Function to refresh the account list
   function refreshAccountList() {
+    showRefreshModal();
+  }
+
+  // When user confirms in modal, start the scan
+  modalConfirmBtn.onclick = function() {
+    hideRefreshModal();
     // Show loading indicator in the refresh button
     refreshButton.innerHTML = "<div class='loading-spinner'></div>";
     refreshButton.disabled = true;
+    
+    // Show initial notification
+    feedback.textContent = "Scanning for accounts in background...";
+    feedback.style.display = "block";
     
     // Send message to background script to scan for accounts
     chrome.runtime.sendMessage({ action: 'scanForAccounts' }, response => {
@@ -193,16 +218,16 @@ document.addEventListener("DOMContentLoaded", () => {
         refreshButton.innerHTML = "↻";
         refreshButton.disabled = false;
         
-        // Hide feedback after 2 seconds
+        // Hide feedback after 4 seconds
         setTimeout(() => {
           feedback.style.display = "none";
-        }, 2000);
+        }, 4000);
         
         // Log storage info
         logStorageInfo();
       });
     });
-  }
+  };
 
   // Save button click handler
   saveButton.addEventListener("click", () => {

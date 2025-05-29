@@ -198,3 +198,12 @@ const rule = {
 - Chrome API Version: Current as of last update
 
 This documentation serves as a living document and should be updated as the extension evolves.
+
+## Supported URL Patterns
+
+The extension now supports the following URL patterns:
+
+1. Standard Gmail URLs: `https://mail.google.com/mail/u/0/`
+2. Gmail button in Chrome: `https://mail.google.com/mail/?tab=rm&authuser=0&ogbl`
+
+When you click on the Gmail button in Chrome, the extension will automatically redirect you to your preferred account while preserving all other URL parameters.

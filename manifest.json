@@ -18,7 +18,8 @@
     "storage", 
     "webNavigation", 
     "tabs", 
-    "scripting"
+    "scripting",
+    "declarativeNetRequestWithHostAccess"
   ],
   
   "host_permissions": [

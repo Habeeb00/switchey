@@ -520,6 +520,77 @@
       html[data-theme="dark"] .about-section-details h3 {
         color: #8ab4f8;
       }
+
+      /* Custom Confirmation Modal */
+      .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: var(--background-color);
+        color: var(--text-color);
+        border-radius: 8px;
+        padding: 18px 18px 14px 18px;
+        min-width: 240px;
+        max-width: 300px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+        position: relative;
+        font-size: 13px;
+        text-align: left;
+      }
+      .modal-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .modal-body {
+        margin-bottom: 16px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .modal-btn {
+        padding: 6px 16px;
+        border-radius: 4px;
+        border: none;
+        font-size: 13px;
+        cursor: pointer;
+        background: #e5e7eb;
+        color: #222;
+        transition: background 0.2s;
+      }
+      .modal-btn.primary {
+        background: var(--primary-color);
+        color: #fff;
+        font-weight: 500;
+      }
+      .modal-btn:hover {
+        background: var(--primary-hover);
+        color: #fff;
+      }
+      .modal-close {
+        position: absolute;
+        right: 10px;
+        top: 8px;
+        font-size: 18px;
+        color: #888;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        color: #222;
+      }
     </style>
   </head>
   <body>
@@ -598,5 +669,21 @@
       <a href="about.html" target="_blank">About</a>
     </div>
     <script src="popup.js"></script>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="refreshModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="modal-close" id="modalCloseBtn">&times;</span>
+        <div class="modal-title">Scan for Google Accounts?</div>
+        <div class="modal-body">
+          This will scan your Google accounts in the background using a tab.<br><br>
+          <b>Privacy:</b> We do not store this anywhere. It is only stored on your own PC for this session and cleared when you close the extension.
+        </div>
+        <div class="modal-actions">
+          <button id="modalCancelBtn" class="modal-btn">Cancel</button>
+          <button id="modalConfirmBtn" class="modal-btn primary">Continue</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

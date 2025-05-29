@@ -20,7 +20,11 @@ const services = {
   gmail: {
     host: "mail.google.com",
     path: "/mail",
-    patterns: ["mail.google.com/mail"],
+    patterns: [
+      "mail.google.com/mail",
+      "mail.google.com/mail/?tab=rm", // Add Gmail button URL pattern
+      "mail.google.com/mail?tab=rm"   // Also match without the slash
+    ],
   },
   // Other services removed
 };
@@ -71,7 +75,7 @@ function extractEmailFromPage(tabId) {
         }
         
         // Extract a clean Gmail pattern from anywhere in the text
-        const gmailMatch = text.match(/([\w.+-]+@gmail\.com)/i);
+        const gmailMatch = text.match(/([\w.+-]+@gmail.com)/i);
         if (gmailMatch && gmailMatch[1]) {
           return gmailMatch[1].toLowerCase(); // Return only the matched Gmail portion and ensure lowercase
         }
@@ -391,27 +395,37 @@ async function handleNavigationInternal(details) {
       let redirectUrl = null;
       // Specific handling for Gmail
       if (url.hostname === "mail.google.com") {
-        let pathSuffix = "";
-        // Try to preserve the path after /u/X/
-        const mailPathMatch = url.pathname.match(/^\/mail\/u\/\d+\/(.*)/);
-        if (mailPathMatch && mailPathMatch[1]) {
-          pathSuffix = mailPathMatch[1];
-        } else if (
-          url.pathname.startsWith("/mail/") &&
-          !url.pathname.startsWith("/mail/u/")
-        ) {
-          // Handle cases like /mail/ca/, /mail/&?, etc., but not the base /mail/
-          pathSuffix = url.pathname.substring(6); // Get path after /mail/
-        }
-        // Preserve query string, removing any existing authuser param
-        const searchParams = new URLSearchParams(url.search);
-        searchParams.delete("authuser");
-        const queryString = searchParams.toString()
-          ? `?${searchParams.toString()}`
-          : "";
+        // Handle the specific Gmail URL pattern that appears when clicking the Gmail button in Chrome
+        if (url.pathname === "/mail/" && url.search.includes("tab=rm")) {
+          // Create a redirect URL with the preferred account but preserve other parameters
+          const searchParams = new URLSearchParams(url.search);
+          searchParams.set("authuser", authUser); // Replace with the preferred account
+          redirectUrl = `https://mail.google.com/mail/?${searchParams.toString()}`;
+          console.log(`Calculated Gmail button redirect URL: ${redirectUrl}`);
+        } else {
+          // Standard Gmail path handling
+          let pathSuffix = "";
+          // Try to preserve the path after /u/X/
+          const mailPathMatch = url.pathname.match(/^\/mail\/u\/\d+\/(.*)/);
+          if (mailPathMatch && mailPathMatch[1]) {
+            pathSuffix = mailPathMatch[1];
+          } else if (
+            url.pathname.startsWith("/mail/") &&
+            !url.pathname.startsWith("/mail/u/")
+          ) {
+            // Handle cases like /mail/ca/, /mail/&?, etc., but not the base /mail/
+            pathSuffix = url.pathname.substring(6); // Get path after /mail/
+          }
+          // Preserve query string, removing any existing authuser param
+          const searchParams = new URLSearchParams(url.search);
+          searchParams.delete("authuser");
+          const queryString = searchParams.toString()
+            ? `?${searchParams.toString()}`
+            : "";
 
-        redirectUrl = `https://mail.google.com/mail/u/${authUser}/${pathSuffix}${queryString}`;
-        console.log(`Calculated Gmail redirect URL: ${redirectUrl}`);
+          redirectUrl = `https://mail.google.com/mail/u/${authUser}/${pathSuffix}${queryString}`;
+          console.log(`Calculated Gmail redirect URL: ${redirectUrl}`);
+        }
       }
       // Add handling for other Google services here if needed, using a similar pattern
       // else if (url.hostname === "drive.google.com") { ... }
@@ -478,6 +492,17 @@ chrome.webNavigation.onCompleted.addListener(handleNavigation, {
   url: [{ hostSuffix: "google.com" }],
 });
 
+// Special listener for Gmail button clicks
+chrome.webNavigation.onCommitted.addListener(
+  (details) => {
+    if (details.frameId === 0 && details.url.includes("mail.google.com/mail/?tab=rm")) {
+      console.log("Gmail button click detected via webNavigation:", details.url);
+      handleGmailButtonClick(details.tabId, details.url);
+    }
+  },
+  { url: [{ urlMatches: "https://mail.google.com/mail/\\?tab=rm.*" }] }
+);
+
 // Listen for tab updates as a backup method
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (
@@ -485,11 +510,18 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     tab.url &&
     tab.url.includes("google.com")
   ) {
-    handleNavigation({
-      frameId: 0,
-      url: tab.url,
-      tabId: tabId,
-    });
+    // Special case for Gmail button URL pattern
+    if (tab.url.includes("mail.google.com/mail/?tab=rm")) {
+      console.log("Gmail button click detected:", tab.url);
+      handleGmailButtonClick(tabId, tab.url);
+    } else {
+      // Regular handling for other Google URLs
+      handleNavigation({
+        frameId: 0,
+        url: tab.url,
+        tabId: tabId,
+      });
+    }
   }
 });
 
@@ -529,6 +561,16 @@ async function scanForGoogleAccounts() {
       'https://mail.google.com'
     ];
     
+    // Create a hidden tab for scanning
+    tab = await new Promise(resolve => {
+      chrome.tabs.create({ 
+        url: urls[0], 
+        active: false  // Keep it hidden
+      }, (newTab) => {
+        resolve(newTab);
+      });
+    });
+    
     // Try each URL to find accounts
     for (const url of urls) {
       if (foundAccounts.length > 1) {
@@ -536,136 +578,93 @@ async function scanForGoogleAccounts() {
         break;
       }
       
-      // Create a new tab to scan for accounts
-      tab = await new Promise(resolve => {
-        chrome.tabs.create({ url: url, active: false }, (newTab) => {
-          resolve(newTab);
+      // Update the tab URL if it's not the first URL
+      if (url !== urls[0]) {
+        await new Promise(resolve => {
+          chrome.tabs.update(tab.id, { url: url }, resolve);
         });
-      });
+      }
       
-      // Wait longer for the page to fully load (particularly for the account list)
-      // Try multiple times with increasing delays
-      for (let waitTime of [3000, 6000, 10000]) {
-        await new Promise(resolve => setTimeout(resolve, waitTime - (waitTime > 3000 ? 3000 : 0)));
-        
-        console.log(`Scanning ${url} after ${waitTime}ms wait`);
-        
-        // Execute script to find accounts
-        try {
-          const results = await new Promise(resolve => {
-            chrome.scripting.executeScript({
-              target: { tabId: tab.id },
-              func: () => {
-                // This function runs in the context of the Google page
-                const accounts = [];
+      // Wait for the page to load
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      console.log(`Scanning ${url}`);
+      
+      // Execute script to find accounts
+      try {
+        const results = await new Promise(resolve => {
+          chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              // This function runs in the context of the Google page
+              const accounts = [];
+              
+              // Utility function to clean email text - only extract clean Gmail addresses
+              const cleanEmail = (text) => {
+                if (!text) return null;
                 
-                // Utility function to clean email text - only extract clean Gmail addresses
-                const cleanEmail = (text) => {
-                  if (!text) return null;
-                  
-                  // First, handle text that might have names with email in parens like: "John Smith (johnsmith@gmail.com)"
-                  const parenthesesMatch = text.match(/\([\w.+-]+@gmail\.com\)/i);
-                  if (parenthesesMatch) {
-                    // Extract just the email from between parentheses
-                    return parenthesesMatch[0].replace(/[\(\)]/g, '');
-                  }
-                  
-                  // Extract a clean Gmail pattern from anywhere in the text
-                  const gmailMatch = text.match(/[\w.+-]+@gmail\.com/i);
-                  if (gmailMatch) {
-                    return gmailMatch[0]; // Return only the matched Gmail portion
-                  }
-                  
-                  // More lenient approach as last resort, but still only get the email part
-                  if (text.toLowerCase().includes('@gmail.com')) {
-                    // Find the @ position and work back to find a likely username
-                    const atPosition = text.toLowerCase().indexOf('@gmail.com');
-                    if (atPosition > 0) {
-                      // Extract what's likely the username before @gmail.com
-                      let startPos = atPosition;
-                      while (startPos > 0 && /[\w.+-]/.test(text[startPos-1])) {
-                        startPos--;
-                      }
-                      const username = text.substring(startPos, atPosition);
-                      if (username) {
-                        return username + '@gmail.com';
-                      }
+                // First, handle text that might have names with email in parens like: "John Smith (johnsmith@gmail.com)"
+                const parenthesesMatch = text.match(/\([\w.+-]+@gmail\.com\)/i);
+                if (parenthesesMatch) {
+                  // Extract just the email from between parentheses
+                  return parenthesesMatch[0].replace(/[\(\)]/g, '');
+                }
+                
+                // Extract a clean Gmail pattern from anywhere in the text
+                const gmailMatch = text.match(/[\w.+-]+@gmail\.com/i);
+                if (gmailMatch) {
+                  return gmailMatch[0]; // Return only the matched Gmail portion
+                }
+                
+                // More lenient approach as last resort, but still only get the email part
+                if (text.toLowerCase().includes('@gmail.com')) {
+                  // Find the @ position and work back to find a likely username
+                  const atPosition = text.toLowerCase().indexOf('@gmail.com');
+                  if (atPosition > 0) {
+                    // Extract what's likely the username before @gmail.com
+                    let startPos = atPosition;
+                    while (startPos > 0 && /[\w.+-]/.test(text[startPos-1])) {
+                      startPos--;
                     }
-                  }
-                  
-                  return null;
-                };
-                
-                // 1. Try to find accounts using data-email attribute (most reliable)
-                const accountElements = document.querySelectorAll('div[data-email], li[data-email], a[data-email]');
-                accountElements.forEach((el, index) => {
-                  const email = el.getAttribute('data-email');
-                  // Only accept Gmail addresses
-                  if (email && email.toLowerCase().includes('@gmail.com')) {
-                    accounts.push({
-                      email: email,
-                      accountNumber: index.toString()
-                    });
-                  }
-                });
-                
-                // 2. Try Google account switcher UI classes (multiple versions)
-                if (accounts.length <= 1) {
-                  const selectors = [
-                    // Account switcher classes
-                    '.OVnw0d', '.NB6Ldc', '.RASpKe', '.hqHn1', '.gb_Tc',
-                    // Individual profile item classes
-                    '.gb_Ba', '.gb_Ea', '.gb_lb', '.gb_vb', '.gb_A'
-                  ];
-                  
-                  for (const selector of selectors) {
-                    const elements = document.querySelectorAll(selector);
-                    elements.forEach((el, index) => {
-                      // Try to find email in the element text content or children
-                      const allText = el.textContent || '';
-                      const email = cleanEmail(allText);
-                      
-                      if (email && !accounts.some(a => a.email === email)) {
-                        accounts.push({
-                          email: email,
-                          accountNumber: index.toString()
-                        });
-                      }
-                    });
+                    const username = text.substring(startPos, atPosition);
+                    if (username) {
+                      return username + '@gmail.com';
+                    }
                   }
                 }
                 
-                // 3. Look for specific selector combinations
-                if (accounts.length <= 1) {
-                  // Gmail-specific selectors
-                  const profileElement = document.querySelector('.gb_A .gb_Fa, .gb_g .gb_Da, .gb_Jb');
-                  if (profileElement) {
-                    const email = cleanEmail(profileElement.textContent);
-                    if (email && !accounts.some(a => a.email === email)) {
-                      accounts.push({
-                        email: email,
-                        accountNumber: '0' // Default account is usually 0
-                      });
-                    }
-                  }
-                  
-                  // Look for account menu items
-                  document.querySelectorAll('[role="menuitem"]').forEach((menuItem, index) => {
-                    if (menuItem.textContent && menuItem.textContent.includes('@')) {
-                      const email = cleanEmail(menuItem.textContent);
-                      if (email && !accounts.some(a => a.email === email)) {
-                        accounts.push({
-                          email: email,
-                          accountNumber: index.toString()
-                        });
-                      }
-                    }
+                return null;
+              };
+              
+              // 1. Try to find accounts using data-email attribute (most reliable)
+              const accountElements = document.querySelectorAll('div[data-email], li[data-email], a[data-email]');
+              accountElements.forEach((el, index) => {
+                const email = el.getAttribute('data-email');
+                // Only accept Gmail addresses
+                if (email && email.toLowerCase().includes('@gmail.com')) {
+                  accounts.push({
+                    email: email,
+                    accountNumber: index.toString()
                   });
-                  
-                  // All elements with aria-label containing @
-                  document.querySelectorAll('[aria-label*="@"]').forEach((el, index) => {
-                    const label = el.getAttribute('aria-label');
-                    const email = cleanEmail(label);
+                }
+              });
+              
+              // 2. Try Google account switcher UI classes (multiple versions)
+              if (accounts.length <= 1) {
+                const selectors = [
+                  // Account switcher classes
+                  '.OVnw0d', '.NB6Ldc', '.RASpKe', '.hqHn1', '.gb_Tc',
+                  // Individual profile item classes
+                  '.gb_Ba', '.gb_Ea', '.gb_lb', '.gb_vb', '.gb_A'
+                ];
+                
+                for (const selector of selectors) {
+                  const elements = document.querySelectorAll(selector);
+                  elements.forEach((el, index) => {
+                    // Try to find email in the element text content or children
+                    const allText = el.textContent || '';
+                    const email = cleanEmail(allText);
+                    
                     if (email && !accounts.some(a => a.email === email)) {
                       accounts.push({
                         email: email,
@@ -674,77 +673,109 @@ async function scanForGoogleAccounts() {
                     }
                   });
                 }
-                
-                // 4. If we still don't have multiple accounts, try all elements with @
-                if (accounts.length <= 1) {
-                  // Get all elements containing @
-                  const allElements = Array.from(document.querySelectorAll('*')).filter(
-                    el => el.textContent && el.textContent.includes('@')
-                  );
-                  
-                  allElements.forEach((el, index) => {
-                    const email = cleanEmail(el.textContent);
-                    if (email && !accounts.some(a => a.email === email)) {
-                      // Add with a high account number to avoid conflicts
-                      accounts.push({
-                        email: email,
-                        accountNumber: (100 + index).toString()
-                      });
-                    }
-                  });
+              }
+              
+              // 3. Look for specific selector combinations
+              if (accounts.length <= 1) {
+                // Gmail-specific selectors
+                const profileElement = document.querySelector('.gb_A .gb_Fa, .gb_g .gb_Da, .gb_Jb');
+                if (profileElement) {
+                  const email = cleanEmail(profileElement.textContent);
+                  if (email && !accounts.some(a => a.email === email)) {
+                    accounts.push({
+                      email: email,
+                      accountNumber: '0' // Default account is usually 0
+                    });
+                  }
                 }
                 
-                // Remove duplicates (same email)
-                const uniqueAccounts = [];
-                const seenEmails = new Set();
-                accounts.forEach(account => {
-                  if (!seenEmails.has(account.email)) {
-                    seenEmails.add(account.email);
-                    uniqueAccounts.push(account);
+                // Look for account menu items
+                document.querySelectorAll('[role="menuitem"]').forEach((menuItem, index) => {
+                  if (menuItem.textContent && menuItem.textContent.includes('@')) {
+                    const email = cleanEmail(menuItem.textContent);
+                    if (email && !accounts.some(a => a.email === email)) {
+                      accounts.push({
+                        email: email,
+                        accountNumber: index.toString()
+                      });
+                    }
                   }
                 });
                 
-                console.log('Found accounts:', uniqueAccounts);
-                return uniqueAccounts;
+                // All elements with aria-label containing @
+                document.querySelectorAll('[aria-label*="@"]').forEach((el, index) => {
+                  const label = el.getAttribute('aria-label');
+                  const email = cleanEmail(label);
+                  if (email && !accounts.some(a => a.email === email)) {
+                    accounts.push({
+                      email: email,
+                      accountNumber: index.toString()
+                    });
+                  }
+                });
               }
-            }, (results) => {
-              if (chrome.runtime.lastError) {
-                console.error('Script execution error:', chrome.runtime.lastError);
-                resolve([]);
-              } else {
-                resolve(results);
+              
+              // 4. If we still don't have multiple accounts, try all elements with @
+              if (accounts.length <= 1) {
+                // Get all elements containing @
+                const allElements = Array.from(document.querySelectorAll('*')).filter(
+                  el => el.textContent && el.textContent.includes('@')
+                );
+                
+                allElements.forEach((el, index) => {
+                  const email = cleanEmail(el.textContent);
+                  if (email && !accounts.some(a => a.email === email)) {
+                    // Add with a high account number to avoid conflicts
+                    accounts.push({
+                      email: email,
+                      accountNumber: (100 + index).toString()
+                    });
+                  }
+                });
               }
-            });
+              
+              // Remove duplicates (same email)
+              const uniqueAccounts = [];
+              const seenEmails = new Set();
+              accounts.forEach(account => {
+                if (!seenEmails.has(account.email)) {
+                  seenEmails.add(account.email);
+                  uniqueAccounts.push(account);
+                }
+              });
+              
+              console.log('Found accounts:', uniqueAccounts);
+              return uniqueAccounts;
+            }
+          }, (results) => {
+            if (chrome.runtime.lastError) {
+              console.error('Script execution error:', chrome.runtime.lastError);
+              resolve([]);
+            } else {
+              resolve(results);
+            }
           });
-          
-          // Process the results
-          if (results && results[0] && results[0].result) {
-            const newAccounts = results[0].result;
-            console.log(`Found ${newAccounts.length} accounts at ${url}:`, newAccounts);
-            
-            // Merge with previously found accounts
-            newAccounts.forEach(account => {
-              if (!foundAccounts.some(a => a.email === account.email)) {
-                foundAccounts.push(account);
-              }
-            });
-          }
-          
-          if (foundAccounts.length > 1) {
-            // If we found multiple accounts, we can stop trying
-            break;
-          }
-        } catch (error) {
-          console.error(`Error scanning accounts at ${url}:`, error);
-        }
-      }
-      
-      // Clean up by closing this tab before moving to next URL
-      if (tab) {
-        await new Promise(resolve => {
-          chrome.tabs.remove(tab.id, resolve);
         });
-        tab = null;
+        
+        // Process the results
+        if (results && results[0] && results[0].result) {
+          const newAccounts = results[0].result;
+          console.log(`Found ${newAccounts.length} accounts at ${url}:`, newAccounts);
+          
+          // Merge with previously found accounts
+          newAccounts.forEach(account => {
+            if (!foundAccounts.some(a => a.email === account.email)) {
+              foundAccounts.push(account);
+            }
+          });
+        }
+        
+        if (foundAccounts.length > 1) {
+          // If we found multiple accounts, we can stop trying
+          break;
+        }
+      } catch (error) {
+        console.error(`Error scanning accounts at ${url}:`, error);
       }
     }
     
@@ -778,7 +809,7 @@ async function scanForGoogleAccounts() {
   } catch (error) {
     console.error('Error in account scanning process:', error);
   } finally {
-    // Make sure we clean up any remaining tab
+    // Clean up by closing the hidden tab
     if (tab) {
       chrome.tabs.remove(tab.id);
     }
@@ -850,6 +881,9 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log("Initialized detected accounts to 1 and created accountEmails storage");
   });
 
+  // Create dynamic rules for Gmail button URL
+  createGmailButtonRule();
+
   // Display current storage contents
   chrome.storage.sync.get(null, (items) => {
     console.log("Current storage contents:", items);
@@ -859,9 +893,104 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Create a dynamic rule for the Gmail button URL
+function createGmailButtonRule() {
+  chrome.storage.sync.get("selectedAuthUser", (result) => {
+    const authUser = result.selectedAuthUser !== undefined ? String(result.selectedAuthUser) : "0";
+    
+    // Create rules to redirect Gmail button clicks to the selected account
+    const gmailButtonRules = [
+      // Rule for URLs with tab=rm parameter
+      {
+        id: 10,
+        priority: 2,
+        action: {
+          type: "redirect",
+          redirect: {
+            transform: {
+              queryTransform: {
+                addOrReplaceParams: [{ key: "authuser", value: authUser }]
+              }
+            }
+          }
+        },
+        condition: {
+          urlFilter: "https://mail.google.com/mail/?tab=rm",
+          resourceTypes: ["main_frame"]
+        }
+      },
+      // Rule for URLs with tab=rm and other parameters
+      {
+        id: 11,
+        priority: 2,
+        action: {
+          type: "redirect",
+          redirect: {
+            transform: {
+              queryTransform: {
+                addOrReplaceParams: [{ key: "authuser", value: authUser }]
+              }
+            }
+          }
+        },
+        condition: {
+          urlFilter: "https://mail.google.com/mail/?tab=rm&",
+          resourceTypes: ["main_frame"]
+        }
+      },
+      // Rule for URLs with authuser=0 parameter
+      {
+        id: 12,
+        priority: 2,
+        action: {
+          type: "redirect",
+          redirect: {
+            transform: {
+              queryTransform: {
+                addOrReplaceParams: [{ key: "authuser", value: authUser }]
+              }
+            }
+          }
+        },
+        condition: {
+          urlFilter: "https://mail.google.com/mail/?authuser=0",
+          resourceTypes: ["main_frame"]
+        }
+      }
+    ];
+    
+    // Update the rules
+    chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [10, 11, 12], // Remove existing rules
+      addRules: gmailButtonRules
+    }).then(() => {
+      console.log(`Created Gmail button rules for account ${authUser}`);
+    }).catch(error => {
+      console.error("Error creating Gmail button rules:", error);
+    });
+  });
+}
+
+// Listen for storage changes to update rules
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (changes.selectedAuthUser) {
+    const newValue = changes.selectedAuthUser.newValue;
+    const oldValue = changes.selectedAuthUser.oldValue;
+    console.log(
+      `STORAGE CHANGED: selectedAuthUser from ${oldValue} to ${newValue}`
+    );
+    
+    // Update the Gmail button rule when the selected account changes
+    createGmailButtonRule();
+  }
+});
+
 // Startup handler
 chrome.runtime.onStartup.addListener(() => {
   console.log("Extension started");
+
+  // Create Gmail button rule on startup
+  createGmailButtonRule();
 
   // Display current storage contents on startup
   chrome.storage.sync.get(null, (items) => {
@@ -871,3 +1000,80 @@ chrome.runtime.onStartup.addListener(() => {
     console.log("Local storage contents at startup:", items);
   });
 });
+
+// Special handler for Gmail button clicks
+function handleGmailButtonClick(tabId, url) {
+  // Don't redirect if we're already in the process of redirecting
+  if (redirectInProgress) {
+    console.log("Redirect already in progress, skipping Gmail button handler");
+    return;
+  }
+
+  // Get the current account selection
+  chrome.storage.sync.get("selectedAuthUser", (result) => {
+    const authUser = result.selectedAuthUser !== undefined ? String(result.selectedAuthUser) : "0";
+    
+    // Check if manual mode is enabled
+    chrome.storage.local.get(['manualMode'], (modeResult) => {
+      const manualMode = !!modeResult.manualMode;
+      if (manualMode) {
+        console.log("Manual switching mode enabled, skipping Gmail button redirect");
+        return;
+      }
+      
+      try {
+        const urlObj = new URL(url);
+        const searchParams = new URLSearchParams(urlObj.search);
+        
+        // Check if we're already on the correct account
+        const currentAuthUser = searchParams.get("authuser") || "0";
+        if (currentAuthUser === authUser) {
+          console.log(`Already using the correct account (${authUser}) for Gmail button`);
+          return;
+        }
+        
+        // Create redirect URL with the preferred account
+        searchParams.set("authuser", authUser);
+        
+        // Preserve all other parameters
+        const redirectUrl = `https://mail.google.com/mail/?${searchParams.toString()}`;
+        
+        console.log(`Redirecting Gmail button click to account ${authUser}: ${redirectUrl}`);
+        
+        // Perform the redirect
+        redirectInProgress = true;
+        lastRedirectTime = Date.now();
+        lastRedirectUrl = redirectUrl;
+        
+        chrome.tabs.update(tabId, { url: redirectUrl }, () => {
+          // Double-check that the redirect worked
+          setTimeout(() => {
+            chrome.tabs.get(tabId, (tab) => {
+              if (tab && tab.url) {
+                const currentUrl = new URL(tab.url);
+                const params = new URLSearchParams(currentUrl.search);
+                const currentAuthUser = params.get("authuser") || "0";
+                
+                if (currentAuthUser !== authUser) {
+                  console.log(`Redirect didn't work, trying again with account ${authUser}`);
+                  // Try a different approach
+                  params.set("authuser", authUser);
+                  const newRedirectUrl = `https://mail.google.com/mail/?${params.toString()}`;
+                  chrome.tabs.update(tabId, { url: newRedirectUrl });
+                } else {
+                  console.log(`Redirect successful, now using account ${authUser}`);
+                }
+              }
+              
+              // Reset redirect flag
+              redirectInProgress = false;
+            });
+          }, 1500);
+        });
+      } catch (error) {
+        console.error("Error handling Gmail button click:", error);
+        redirectInProgress = false;
+      }
+    });
+  });
+}
