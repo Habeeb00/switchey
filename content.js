@@ -1,4 +1,11 @@
-// Content script to help extract email addresses from Google pages
+// In popup.js, replace the refreshAccountList function's loading indicator:
+function refreshAccountList() {
+  // Show loading indicator
+  refreshButton.innerHTML = "<div class='loading-spinner'></div>";
+  refreshButton.disabled = true;
+  
+  // Rest of your refresh logic...
+}// Content script to help extract email addresses from Google pages
 
 // Listen for messages from the background script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

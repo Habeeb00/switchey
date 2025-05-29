@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>About</title>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap");
+      /* Remove Google fonts import */
+      /* @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap"); */
 
       :root {
-        --primary-color: #4285f4;
-        --primary-hover: #3367d6;
+        --primary-color: #3b82f6; /* Changed from Google blue */
+        --primary-hover: #2563eb; /* Changed from Google blue hover */
         --background-color: #ffffff;
         --text-color: #202124;
         --border-color: #dadce0;
@@ -17,8 +18,8 @@
       }
 
       html[data-theme="dark"] {
-        --primary-color: #8ab4f8;
-        --primary-hover: #aecbfa;
+        --primary-color: #60a5fa; /* Changed from Google blue */
+        --primary-hover: #93c5fd; /* Changed from Google blue hover */
         --background-color: #202124;
         --text-color: #e8eaed;
         --border-color: #5f6368;
@@ -26,7 +27,7 @@
       }
 
       body {
-        font-family: "Google Sans", "Roboto", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         line-height: 1.6;
         margin: 0;
         padding: 20px;
@@ -37,7 +38,7 @@
 
       h1,
       h2 {
-        font-family: "Google Sans", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         color: var(--primary-color);
         margin-top: 0;
         font-weight: 500;
@@ -46,7 +47,7 @@
 
       .section {
         background-color: var(--card-bg);
-        border-radius: 8px;
+        border-radius: 4px;
         padding: 16px;
         margin-bottom: 20px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -71,7 +72,7 @@
         background-color: white;
         border: 1px solid var(--border-color);
         cursor: pointer;
-        border-radius: 50%;
+        border-radius: 4px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -91,7 +92,7 @@
       }
 
       html[data-theme="dark"] .theme-toggle::after {
-        background-color: #8ab4f8;
+        background-color: #60a5fa;
       }
 
       .theme-toggle::after {
@@ -99,8 +100,8 @@
         display: block;
         width: 16px;
         height: 16px;
-        border-radius: 50%;
-        background-color: #4285f4;
+        border-radius: 2px;
+        background-color: #3b82f6;
         transition: transform 0.3s ease;
       }
 
@@ -114,7 +115,7 @@
       .feature-item {
         background-color: var(--background-color);
         border: 1px solid var(--border-color);
-        border-radius: 8px;
+        border-radius: 4px;
         padding: 16px;
         transition: transform 0.2s, box-shadow 0.2s;
       }
@@ -128,6 +129,7 @@
         color: var(--primary-color);
         margin: 0 0 8px 0;
         font-size: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
       }
 
       .feature-item p {
@@ -152,8 +154,8 @@
         gap: 12px;
         padding: 12px 28px;
         border: none;
-        border-radius: 24px;
-        font-family: "Google Sans", sans-serif;
+        border-radius: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 14px;
         font-weight: 500;
         text-decoration: none;
@@ -162,39 +164,44 @@
       }
 
       .github-button {
-        background-color: #2da44e;
+        background-color: #333333; /* Darker color more like GitHub's brand */
         color: white;
       }
 
       .github-button:hover {
-        background-color: #2c974b;
+        background-color: #444444;
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(45, 164, 78, 0.2);
+        box-shadow: 0 4px 8px rgba(51, 51, 51, 0.2);
       }
 
       .coffee-button {
-        background-color: #ff813f;
+        background-color: #6d4c41; /* Coffee brown color */
         color: white;
       }
 
       .coffee-button:hover {
-        background-color: #ff6b1a;
+        background-color: #5d4037;
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(255, 129, 63, 0.2);
+        box-shadow: 0 4px 8px rgba(109, 76, 65, 0.2);
       }
 
       /* Dark mode adjustments */
       html[data-theme="dark"] .github-button {
-        background-color: #238636;
+        background-color: #555555;
       }
 
       html[data-theme="dark"] .github-button:hover {
-        background-color: #2ea043;
-        box-shadow: 0 4px 8px rgba(35, 134, 54, 0.3);
+        background-color: #666666;
+        box-shadow: 0 4px 8px rgba(85, 85, 85, 0.3);
+      }
+
+      html[data-theme="dark"] .coffee-button {
+        background-color: #8d6e63;
       }
 
       html[data-theme="dark"] .coffee-button:hover {
-        box-shadow: 0 4px 8px rgba(255, 129, 63, 0.3);
+        background-color: #a1887f;
+        box-shadow: 0 4px 8px rgba(141, 110, 99, 0.3);
       }
 
       .icon {
@@ -257,6 +264,18 @@
       html[data-theme="dark"] .contact-separator {
         color: var(--border-color);
       }
+
+      .about-section-details h3 {
+        color: #3b82f6; /* Changed from Google blue */
+        margin-bottom: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      }
+
+      html[data-theme="dark"] .about-section-details h3 {
+        color: #60a5fa; /* Changed from Google blue */
+      }
     </style>
   </head>
   <body>
@@ -272,14 +291,14 @@
         <div class="feature-item">
           <h3>Smart Account Management</h3>
           <p>
-            Automatically detects and manages multiple Google accounts for
+            Automatically detects and manages multiple accounts for
             seamless switching.
           </p>
         </div>
         <div class="feature-item">
           <h3>Default Account Selection</h3>
           <p>
-            Set your preferred Google account as default for all new sessions.
+            Set your preferred account as default for all new sessions.
           </p>
         </div>
         <div class="feature-item">
@@ -311,7 +330,7 @@
     </div>
     <div class="section">
       <h2>Version</h2>
-      <p><span>Google default account switcher</span> <span>v 1.0.0</span></p>
+      <p><span>Account Switcher for Google</span> <span>v 1.0.0</span></p>
     </div>
     <div class="section">
       <h2>Creator</h2>
@@ -359,7 +378,7 @@
         <div class="feature-item">
           <h3>Quick Account Switch</h3>
           <p>
-            Use the dropdown menu to easily switch between your Google accounts
+            Use the dropdown menu to easily switch between your accounts
             without logging out and back in
           </p>
         </div>

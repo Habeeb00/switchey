@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Google Account Redirector</title>
+    <title>Account Switcher</title>
     <style>
-      /* Import Google Fonts */
-      @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap");
+      /* Replace Google Fonts with web-safe alternatives */
+      /* @import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@300;400;500&display=swap"); */
 
       :root {
-        --primary-color: #4285f4;
-        --primary-hover: #3367d6;
+        --primary-color: #3b82f6; /* Changed from Google blue */
+        --primary-hover: #2563eb; /* Changed from Google blue hover */
         --background-color: #ffffff;
         --text-color: #202124;
         --border-color: #dadce0;
@@ -19,8 +19,8 @@
       }
 
       html[data-theme="dark"] {
-        --primary-color: #8ab4f8;
-        --primary-hover: #aecbfa;
+        --primary-color: #60a5fa; /* Changed from Google blue */
+        --primary-hover: #93c5fd; /* Changed from Google blue hover */
         --background-color: #202124;
         --text-color: #e8eaed;
         --border-color: #5f6368;
@@ -81,7 +81,7 @@
       }
 
       body {
-        font-family: "Google Sans", "Roboto", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         padding: 16px;
         width: 320px;
         max-height: 350px;
@@ -111,7 +111,7 @@
       }
 
       h2 {
-        font-family: "Google Sans", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 18px;
         margin-top: 0;
         margin-bottom: 16px;
@@ -122,7 +122,7 @@
       }
 
       h3 {
-        font-family: "Google Sans", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 15px;
         margin-top: 0;
         margin-bottom: 8px;
@@ -134,14 +134,14 @@
       .account-picker {
         flex-grow: 1;
         padding: 8px 12px;
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         border: 1px solid var(--border-color);
-        height: 40px; /* Slightly taller for better readability */
+        height: 40px;
         background-color: var(--dropdown-bg);
         color: var(--text-color);
         outline: none;
         transition: all 0.3s;
-        font-family: "Roboto", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 14px;
         appearance: none;
         background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="6"><path d="M0 0l6 6 6-6z" fill="gray"/></svg>');
@@ -153,7 +153,7 @@
 
       .account-picker:focus {
         border-color: var(--primary-color);
-        box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); /* Updated color */
       }
 
       .refresh-button {
@@ -161,7 +161,7 @@
         background-color: var(--background-color);
         color: var(--primary-color);
         border: 1px solid var(--primary-color);
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         cursor: pointer;
         font-size: 14px;
         font-weight: 500;
@@ -217,9 +217,9 @@
         background-color: var(--primary-color);
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         cursor: pointer;
-        font-family: "Google Sans", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-weight: 500;
         font-size: 14px;
         letter-spacing: 0.25px;
@@ -246,11 +246,11 @@
         background-color: var(--success-bg);
         color: var(--success-text);
         padding: 10px;
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         margin: 12px 0;
         text-align: center;
         animation: fadeInOut 2s ease-in-out;
-        font-family: "Google Sans", sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
         font-size: 13px;
       }
 
@@ -271,7 +271,7 @@
 
       .section-card {
         background-color: var(--card-bg);
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         padding: 12px;
         margin-top: 16px;
         margin-bottom: 16px;
@@ -307,7 +307,7 @@
         height: 16px;
         background-color: var(--border-color);
         color: var(--text-color);
-        border-radius: 50%;
+        border-radius: 4px; /* Changed from circular to square with rounded corners */
         text-align: center;
         font-size: 12px;
         line-height: 16px;
@@ -321,7 +321,7 @@
         background-color: var(--card-bg);
         color: var(--text-color);
         text-align: center;
-        border-radius: 6px;
+        border-radius: 4px; /* Less rounded corners */
         padding: 8px;
         padding-right: 30%;
         position: absolute;
@@ -367,7 +367,7 @@
         background-color: white;
         border: 1px solid var(--border-color);
         cursor: pointer;
-        border-radius: 50%;
+        border-radius: 4px; /* Changed from circular to square with rounded corners */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -388,7 +388,7 @@
       }
 
       html[data-theme="dark"] .theme-toggle::after {
-        background-color: #8ab4f8;
+        background-color: #60a5fa; /* Updated color */
       }
 
       .theme-toggle::after {
@@ -396,8 +396,8 @@
         display: block;
         width: 16px;
         height: 16px;
-        border-radius: 50%;
-        background-color: #4285f4;
+        border-radius: 2px; /* Square with slightly rounded corners instead of circle */
+        background-color: #3b82f6; /* Updated color */
         transition: transform 0.3s ease;
       }
       .about-section {
@@ -408,7 +408,7 @@
         color: #555;
         text-align: center;
         background-color: #f8f9fa;
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
         display: flex;
         justify-content: center;
         align-items: center;
@@ -500,7 +500,7 @@
         text-align: center;
         padding: 10px;
         background-color: #f0f0f0;
-        border-radius: 8px;
+        border-radius: 4px; /* Less rounded corners */
       }
       .about-section-details h3 {
         color: #1a73e8;
@@ -523,7 +523,7 @@
     </style>
   </head>
   <body>
-    <h2>Select Default Google Account</h2>
+    <h2>Select Default Account</h2>
     <button
       id="theme-toggle"
       class="theme-toggle"

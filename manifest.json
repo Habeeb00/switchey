@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Google Default Account Switcher",
+  "name": "Account Switcher for Google",
   "version": "1.0.0",
   "version_name": "1.0 Beta",
-  "description": "Effortlessly manage and switch between your Google accounts. Set default accounts, prevent unwanted redirects, and enjoy seamless account management across Google services.",
+  "description": "Easily manage multiple accounts and set your preferred default account for Google services. Prevent unwanted redirects and enjoy seamless account switching.",
   "author": "Habeeb Rahman",
   "homepage_url": "https://bento.me/habeebrahman",
   
@@ -40,7 +40,7 @@
       "48": "icon.png",
       "128": "icon.png"
     },
-    "default_title": "Google Default Account Switcher"
+    "default_title": "Account Switcher"
   },
   
   "declarative_net_request": {
